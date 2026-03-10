@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { databaseConfig } from './config/database.config';
-import { HealthController } from './health/health.controller';
+import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { HttpMetricsMiddleware } from './metrics/http-metrics.middleware';
 import { ProductsModule } from './products/products.module';
 
 @Module({
@@ -18,8 +19,13 @@ import { ProductsModule } from './products/products.module';
     MetricsModule,
     AuthModule,
     ProductsModule,
+    HealthModule,
   ],
-  controllers: [AppController, HealthController],
+  controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpMetricsMiddleware).forRoutes('*');
+  }
+}
